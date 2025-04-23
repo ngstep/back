@@ -33,8 +33,20 @@
 #import <AppKit/NSCursor.h>
 #import <AppKit/NSGraphics.h>
 #import <AppKit/NSBitmapImageRep.h>
+#import <AppKit/NSButton.h>
 #import <GNUstepGUI/GSWindowDecorationView.h>
 #import <GNUstepGUI/GSTheme.h>
+
+// private accessor into an NSWindow’s decoration view
+@interface NSWindow (WindowView)
+- (GSStandardWindowDecorationView *)_windowView;
+@end
+
+// private API on the standard decoration view
+@interface GSStandardWindowDecorationView (Private)
+- (NSRect)closeBoxRect;
+@end
+
 #include <linux/input.h>
 #include "wayland-cursor.h"
 
@@ -281,7 +293,22 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
   NSTimeInterval timestamp = (NSTimeInterval) time / 1000.0;
 
   if (state == WL_POINTER_BUTTON_STATE_PRESSED)
-    {
+  {
+      if (button == BTN_LEFT)
+      {
+          NSWindow *nswin    = GSWindowWithNumber(window->window_id);
+          NSButton *closeBtn = [nswin standardWindowButton:NSWindowCloseButton];
+          if (closeBtn)
+          {
+              NSPoint local = [closeBtn convertPoint:eventLocation
+                                            fromView:nil];
+              if (NSPointInRect(local, closeBtn.bounds))
+              {
+                  [nswin performClose:nil];
+                  return;
+              }
+          }
+      }
       wlconfig->pointer.button = button;
       if (window->toplevel)
         {
