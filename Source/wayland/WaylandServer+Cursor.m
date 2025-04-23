@@ -308,7 +308,23 @@ pointer_handle_button(void *data, struct wl_pointer *pointer, uint32_t serial,
                   return;
               }
           }
+
+      NSButton *miniBtn = [nswin standardWindowButton:NSWindowMiniaturizeButton];
+      if (miniBtn)
+      {
+          NSPoint loc = [miniBtn convertPoint:eventLocation
+                                      fromView:nil];
+          if (NSPointInRect(loc, miniBtn.bounds))
+          {
+              [nswin performSelectorOnMainThread:@selector(miniaturize:)
+                                     withObject:nil
+                                  waitUntilDone:NO];
+              return;
+          }
+        }
+
       }
+
       wlconfig->pointer.button = button;
       if (window->toplevel)
         {
